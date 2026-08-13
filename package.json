@@ -1,0 +1,41 @@
+{
+  "name": "otc-oidc",
+  "version": "0.1.0",
+  "description": "Central one-time-code email login + OpenID Connect SSO for college tools",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "dev:client": "node scripts/dev-client.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "gen:secrets": "tsx scripts/gen-secrets.ts"
+  },
+  "dependencies": {
+    "envalid": "^8.2.0",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "jose": "^6.2.8",
+    "nodemailer": "^9.0.5",
+    "oidc-provider": "^9.11.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.13.3",
+    "@types/nodemailer": "^8.0.1",
+    "eslint": "^10.8.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.12",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0"
+  }
+}
