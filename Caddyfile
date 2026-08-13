@@ -1,0 +1,8 @@
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000 {
+		# Overwrite (not append) so the app only ever sees the real client IP,
+		# never a client-supplied X-Forwarded-For.
+		header_up X-Forwarded-For {remote_host}
+	}
+}

@@ -1,0 +1,11 @@
+node_modules
+dist
+data
+.env
+*.log
+.git
+.github
+test
+scripts
+README.md
+AGENTS.md
