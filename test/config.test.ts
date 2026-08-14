@@ -81,6 +81,7 @@ describe('loadConfig', () => {
     process.env.NODE_ENV = 'production';
     process.env.COOKIE_SECRET = 'secret';
     process.env.ISSUER_URL = 'https://sso.example.org';
+    process.env.CLIENTS_PATH = './clients.example.json';
     process.env.MAIL_DRIVER = 'console';
     assert.throws(() => loadConfig(), /MAIL_DRIVER=console is not allowed/);
   });
