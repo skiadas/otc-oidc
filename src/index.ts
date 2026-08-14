@@ -73,7 +73,18 @@ async function main(): Promise<void> {
   // One trusted reverse-proxy hop (Caddy). Trusting all proxies would let a
   // client spoof X-Forwarded-For and bypass the IP-based rate limiter.
   app.set('trust proxy', 1);
-  app.use(helmet());
+  // form-action is dropped: the only cross-origin navigation after a form is
+  // the post-login redirect to a registered client's redirect_uri, which
+  // oidc-provider already allowlists. Keeping 'self' there blocks that redirect.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          formAction: null,
+        },
+      },
+    }),
+  );
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', issuer: config.issuerUrl });
