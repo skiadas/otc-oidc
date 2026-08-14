@@ -18,7 +18,7 @@ import { Mailer } from './mailer.js';
 import { AccountStore } from './accounts.js';
 import { createProvider, loadClients, type ClientConfig } from './oidc.js';
 import { interactionRouter } from './routes/interaction.js';
-import { html, raw } from './views.js';
+import { html, raw, renderInfoPage } from './views.js';
 
 function renderDevHarness(config: Config, clients: ClientConfig[]): string {
   const rows = clients.map((c) => html`<li><code>${c.client_id}</code></li>`).join('');
@@ -108,6 +108,10 @@ async function main(): Promise<void> {
     app.get('/', (_req, res) => {
       const clients = loadClients(config.clientsPath);
       res.set('Content-Type', 'text/html').send(renderDevHarness(config, clients));
+    });
+  } else {
+    app.get('/', (_req, res) => {
+      res.set('Content-Type', 'text/html').send(renderInfoPage(config));
     });
   }
 

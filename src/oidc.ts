@@ -186,8 +186,12 @@ export async function createProvider(
 ): Promise<Provider> {
   const clients = loadClients(config.clientsPath);
   const jwks = await loadOrCreateJwks(config.dataDir);
-  return new Provider(
+  const provider = new Provider(
     config.issuerUrl,
     buildProviderConfig(config, accounts, clients, jwks, adapterBundle),
   );
+  // Caddy terminates TLS in front, so Koa sees plain http and would render
+  // http:// discovery endpoints. Trust the forwarded scheme/host instead.
+  provider.proxy = true;
+  return provider;
 }

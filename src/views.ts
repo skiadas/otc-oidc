@@ -249,3 +249,22 @@ export function renderError(config: Config, title: string, message: string): str
       ${errorBanner(message)}`,
   );
 }
+
+/**
+ * Minimal landing page served at `/` in production, so a bare visit to the
+ * issuer host shows something human-readable instead of a 404. No user data.
+ */
+export function renderInfoPage(config: Config): string {
+  const discovery = '/.well-known/openid-configuration';
+  const body = html`
+    <h1>${config.serviceName}</h1>
+    <p>
+      This is the sign-in provider for ${config.serviceName}. Tools redirect
+      here to log you in; there is nothing to browse at this address.
+    </p>
+    <p>
+      <a href="${discovery}">OpenID Connect discovery document</a>
+    </p>
+  `;
+  return layout(config, config.serviceName, body);
+}

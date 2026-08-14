@@ -105,6 +105,9 @@ declare module 'oidc-provider' {
   export default class Provider {
     constructor(issuer: string, config?: ProviderConfiguration);
     issuer: string;
+    // Koa Application.proxy: trust X-Forwarded-* so discovery endpoints use
+    // the external scheme/host when the provider sits behind a TLS proxy.
+    proxy: boolean;
     Grant: typeof Grant;
     on(event: string, listener: (ctx: unknown, err: Error) => void): this;
     callback(): (req: unknown, res: unknown) => Promise<void>;
