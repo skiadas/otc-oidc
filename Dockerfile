@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:24.19.0-alpine3.24 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -6,13 +6,14 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:24-alpine AS runtime
+FROM node:24.19.0-alpine3.24 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev \
+  && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  && mkdir -p /app/data && chown node:node /app/data
 COPY --from=build /app/dist ./dist
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN apk add --no-cache su-exec && chmod +x /usr/local/bin/docker-entrypoint.sh
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+USER node
 EXPOSE 3000
+CMD ["node", "dist/index.js"]

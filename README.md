@@ -166,33 +166,39 @@ docker compose up -d
 ```
 
 `DOMAIN` and `GHCR_OWNER` are read by `compose.yml` (not the app): `DOMAIN` is the hostname Caddy
-serves, `GHCR_OWNER` is the GitHub owner of the image you pull from. The `./data` directory is a
-bind mount owned by the container's `node` user; the image's entrypoint fixes ownership on start,
-so no manual `chown` is needed.
+serves, `GHCR_OWNER` is the GitHub owner of the image you pull from. Runtime data (`jwks.json`,
+audit logs) lives in a Docker named volume; `clients.json` stays a bind-mounted host file.
+
+**Caddy is a Compose profile.** With the default `COMPOSE_PROFILES=proxy` in `.env`, `docker
+compose up -d` starts Caddy in front of the app and provisions Let's Encrypt certificates for
+`DOMAIN`. To use your own reverse proxy instead, set `COMPOSE_PROFILES=` (empty) — the app then
+listens on `127.0.0.1:3000` only. Point your proxy there over TLS, and make sure it sets a trusted
+`X-Forwarded-For` (the app trusts exactly one reverse-proxy hop for IP-based rate limiting).
 
 The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`: it runs
 typecheck/lint/tests, then builds and publishes `ghcr.io/<you>/otc-oidc:<sha>` + `:latest`. It does
 **not** touch the server. Instead the server pulls updates on its own schedule:
 
 ```bash
-# as root: hourly check for a new image, snapshot + restart only on change
+# as root: hourly check for a new image, restart only on change
 crontab -e
 # add:
 0 * * * * /opt/otc-oidc/scripts/deploy.sh
 ```
 
 `scripts/deploy.sh` pulls the app image and restarts the stack only when the image digest changed,
-so unchanged polls are no-ops. Before restarting it snapshots `data/` + `clients.json` into
-`./backups` (last 15 kept). No GitHub secrets are needed.
+so unchanged polls are no-ops. No GitHub secrets are needed.
 
-To roll back after a bad upgrade, restore the matching snapshot from `./backups` and point compose
-at the previous image: `IMAGE_TAG=<previous-sha> docker compose up -d`.
+To roll back after a bad upgrade, point compose at the previous image:
+`IMAGE_TAG=<previous-sha> docker compose up -d`. A restart logs everyone out (in-memory sessions),
+which is the accepted model here.
 
 ### 5. Backups
 
-The only irreplaceable data is the audit log (append-only JSONL in `AUDIT_LOG_DIR`) and your
-`clients.json`. The deploy pipeline snapshots both locally before each upgrade. For belt-and-braces,
-periodically copy the log directory somewhere off-box — there's no database to back up.
+The only irreplaceable data is the audit log (append-only JSONL in the `data` volume) and your
+`clients.json`. There is no database to back up. If you want a belt-and-braces copy, pull the log
+out occasionally: `docker cp otc-oidc-app-1:/app/data/. <local-dir>/`. Note that `docker compose
+down -v` deletes the `data` volume — don't run it if you'd miss the audit trail.
 
 ## Storage & restart semantics
 
@@ -201,8 +207,8 @@ Storage is in-memory by design (an in-memory SQLite database, no Postgres/Redis)
 - Restarting the service invalidates all SSO sessions, auth codes, refresh tokens, and pending OTC
   records. Users' tool sessions are unaffected (tools hold their own sessions); they may just need
   to re-enter a code next time their tool session expires.
-- The RS256 signing key is persisted to `data/jwks.json` so tokens already issued remain valid
-  across restarts.
+- The RS256 signing key is persisted to the `data` volume (`data/jwks.json`) so tokens already
+  issued remain valid across restarts.
 
 ## Operations
 
