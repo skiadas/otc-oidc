@@ -162,16 +162,22 @@ git clone <your-repo> /opt/otc-oidc
 cd /opt/otc-oidc
 cp .env.example .env        # fill in real values
 cp clients.example.json clients.json
-chmod +x scripts/deploy.sh
 docker compose up -d
 ```
 
-Upgrades go through the GHCR pipeline: pushing to `main` builds
+`DOMAIN` and `GHCR_OWNER` are read by `compose.yml` (not the app): `DOMAIN` is the hostname Caddy
+serves, `GHCR_OWNER` is the GitHub owner of the image you pull from. The `./data` directory is a
+bind mount owned by the container's `node` user; the image's entrypoint fixes ownership on start,
+so no manual `chown` is needed.
+
+Upgrades go through the GHCR pipeline: pushing to `main` runs typecheck/lint/tests, builds
 `ghcr.io/<you>/otc-oidc:<sha>` + `:latest`, SSHes to the server, takes a pre-upgrade snapshot
 (backup of `data/` + `clients.json`), then pulls and restarts. Roll back by pointing compose at a
 previous image tag.
 
-GitHub Actions secrets needed: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`.
+GitHub Actions secrets needed: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. The deploy step runs
+`scripts/deploy.sh` with `sudo` so the snapshot can read the container-owned `data/` — the SSH user
+must have passwordless sudo.
 
 ### 5. Backups
 
