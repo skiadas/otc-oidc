@@ -56,7 +56,7 @@ npm install
 cp .env.example .env
 # edit .env: ALLOWED_EMAIL_DOMAINS, MAIL_DRIVER=console
 cp clients.example.json clients.json
-npm run gen:secrets    # prints a COOKIE_SECRET to put in .env
+openssl rand -base64 32    # a COOKIE_SECRET to put in .env
 npm run dev
 ```
 
@@ -81,7 +81,7 @@ All configuration is via environment variables (see `.env.example`). The importa
 
 | Variable                                               | Purpose                                            |
 | ------------------------------------------------------ | -------------------------------------------------- |
-| `ISSUER_URL`                                           | Public base URL (must be `https://` in production) |
+| `ISSUER_URL`                                           | Public base URL, `https://<DOMAIN>` with the bundled Caddy |
 | `COOKIE_SECRET`                                        | Signs session/interaction cookies                  |
 | `ALLOWED_EMAIL_DOMAINS`                                | Comma-separated domains allowed to log in          |
 | `MAIL_DRIVER`                                          | `console` (dev) or `smtp` (prod)                   |
