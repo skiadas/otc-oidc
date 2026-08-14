@@ -47,7 +47,7 @@ One Node/TypeScript process. In-memory storage. JSONL audit logs. OIDC protocol 
 - **`typescript` is pinned to ^6** (the JS-based compiler): typescript-eslint needs the TypeScript compiler API, which the native TS 7 package does not expose. Bump back to 7 once typescript-eslint supports it.
 - **Comments are allowed only where they capture non-obvious behavior or security intent** (see the module headers in `src/oidc.ts`, `src/adapter.ts`, `src/otc.ts`, `src/routes/interaction.ts`, `src/index.ts`). Never add a comment that restates what the code already says; self-evident functions stay bare. No `console.log`/debug scaffolding — remove it before committing.
 - No secrets in the repo. Everything configurable via env (`.env.example` documents all variables).
-- Clients are configured in `clients.json` (per-instance, gitignored; `clients.example.json` is tracked and documents the format). Adding a client = add entry + restart.
+- Clients are configured in `clients.json` (per-instance, gitignored; `clients.example.json` is tracked and documents the format). Adding a client = add entry; new client ids are picked up without restart by the reconciler (`createClientReconciler` in `src/oidc.ts`), edits to existing clients still require a restart.
 - Config values are read in `src/config.ts` only; pass the typed `Config` around.
 
 ## oidc-provider v9 specifics (verified against installed version)

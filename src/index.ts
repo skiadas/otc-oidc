@@ -16,7 +16,7 @@ import { RateLimiter } from './rateLimit.js';
 import { AuditLogger } from './audit.js';
 import { Mailer } from './mailer.js';
 import { AccountStore } from './accounts.js';
-import { createProvider, loadClients, type ClientConfig } from './oidc.js';
+import { createProvider, createClientReconciler, loadClients, type ClientConfig } from './oidc.js';
 import { interactionRouter } from './routes/interaction.js';
 import { html, raw, renderInfoPage } from './views.js';
 
@@ -61,6 +61,7 @@ async function main(): Promise<void> {
   const sendLimiterByIp = new RateLimiter(config.rateLimitIpWindowMs, config.rateLimitSendPerIp);
 
   const provider = await createProvider(config, memory, accounts);
+  const clientReconciler = createClientReconciler(config, memory);
 
   provider.on('server_error', (_ctx, err) => {
     process.stderr.write(
@@ -118,7 +119,9 @@ async function main(): Promise<void> {
   app.use(provider.callback());
 
   const sweeper = setInterval(() => {
-    [memory, otc, sendLimiterByEmail, sendLimiterByIp, audit].forEach((s) => s.sweep());
+    [memory, clientReconciler, otc, sendLimiterByEmail, sendLimiterByIp, audit].forEach((s) =>
+      s.sweep(),
+    );
   }, 60_000);
   sweeper.unref();
 

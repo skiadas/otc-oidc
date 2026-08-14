@@ -95,7 +95,9 @@ All configuration is via environment variables (see `.env.example`). The importa
 
 ## Registering a tool (OIDC client)
 
-Add an entry to `clients.json` (per-instance file, gitignored — copy `clients.example.json` and fill in real secrets) and restart.
+Add an entry to `clients.json` (per-instance file, gitignored — copy `clients.example.json` and
+fill in real secrets). **New client ids are picked up within about a minute** by the reconciler,
+with no restart; editing an existing client's entry still requires a restart.
 
 ```json
 {

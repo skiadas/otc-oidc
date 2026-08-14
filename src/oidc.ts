@@ -2,14 +2,17 @@
  * oidc-provider wiring.
  *
  * Clients are loaded from a per-instance config file (`clients.json`, not in
- * git); adding a tool means adding an entry and restarting. PKCE is required
- * for every client. The built-in dev interactions are disabled so our
+ * git); adding a tool means adding an entry and restarting, though new clients
+ * are also picked up without a restart by the reconciler (see
+ * {@link createClientReconciler}) — it upserts previously-unknown client ids
+ * into the adapter, which oidc-provider serves on the next lookup. PKCE is
+ * required for every client. The built-in dev interactions are disabled so our
  * `/interaction/:uid` routes (see `routes/interaction.ts`) handle login, and
  * `interactions.url` returns that path because the interaction cookie is scoped
  * to it. The RS256 signing key is persisted to `$DATA_DIR/jwks.json` so tokens
  * stay verifiable across restarts.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { exportJWK, generateKeyPair } from 'jose';
@@ -44,6 +47,60 @@ export function loadClients(path: string): ClientConfig[] {
   }
 
   return list as ClientConfig[];
+}
+
+/**
+ * Periodic reconciler that picks up newly-added clients from `clients.json`
+ * without a restart. oidc-provider only re-reads a client from the adapter when
+ * the id is absent from its static client map (see `Client.find`), so unknown
+ * ids written here are served on the next request. Edits to existing clients
+ * are intentionally ignored — changing those still requires a restart, since
+ * the static map is authoritative for ids it already knows.
+ *
+ * The file is re-read only when its mtime changes; a malformed file is logged
+ * and skipped, keeping the last known-good state.
+ */
+export function createClientReconciler(
+  config: Config,
+  adapterBundle: AdapterBundle,
+): { sweep: () => void } {
+  let lastMtimeMs = 0;
+  const known = new Set(loadClients(config.clientsPath).map((c) => c.client_id));
+
+  return {
+    sweep: () => {
+      if (!existsSync(config.clientsPath)) return;
+
+      let stat: ReturnType<typeof statSync>;
+      try {
+        stat = statSync(config.clientsPath);
+      } catch {
+        return;
+      }
+      if (stat.mtimeMs === lastMtimeMs) return;
+
+      let clients: ClientConfig[];
+      try {
+        clients = loadClients(config.clientsPath);
+      } catch (err) {
+        process.stderr.write(
+          `client reconcile: ignoring unreadable clients file: ${err instanceof Error ? err.message : String(err)}\n`,
+        );
+        return;
+      }
+
+      const adapter = adapterBundle.adapter('Client');
+      for (const client of clients) {
+        if (known.has(client.client_id)) continue;
+
+        known.add(client.client_id);
+        adapter.upsert(client.client_id, client);
+        process.stderr.write(`client reconcile: added client ${client.client_id}\n`);
+      }
+
+      lastMtimeMs = stat.mtimeMs;
+    },
+  };
 }
 
 /**

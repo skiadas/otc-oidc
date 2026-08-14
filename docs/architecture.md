@@ -165,8 +165,9 @@ impact is an extra code entry next time a tool session expires.
 
 ## Extension points
 
-- **Add a tool:** add a client entry to `clients.json` and restart. PKCE + exact redirect URI
-  required.
+- **Add a tool:** add a client entry to `clients.json` — new client ids are picked up without a
+  restart by the reconciler (upserted into the adapter, which `Client.find` serves on the next
+  lookup); edits to existing clients still require a restart. PKCE + exact redirect URI required.
 - **Allow a new domain:** add it to `ALLOWED_EMAIL_DOMAINS`.
 - **Tune behaviour:** code length/TTL, attempt limits, rate limits, session/token lifetimes —
   all env-driven (see `.env.example`).
