@@ -170,14 +170,23 @@ serves, `GHCR_OWNER` is the GitHub owner of the image you pull from. The `./data
 bind mount owned by the container's `node` user; the image's entrypoint fixes ownership on start,
 so no manual `chown` is needed.
 
-Upgrades go through the GHCR pipeline: pushing to `main` runs typecheck/lint/tests, builds
-`ghcr.io/<you>/otc-oidc:<sha>` + `:latest`, SSHes to the server, takes a pre-upgrade snapshot
-(backup of `data/` + `clients.json`), then pulls and restarts. Roll back by pointing compose at a
-previous image tag.
+The GitHub Actions pipeline (`.github/workflows/deploy.yml`) runs on every push to `main`: it runs
+typecheck/lint/tests, then builds and publishes `ghcr.io/<you>/otc-oidc:<sha>` + `:latest`. It does
+**not** touch the server. Instead the server pulls updates on its own schedule:
 
-GitHub Actions secrets needed: `SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. The deploy step runs
-`scripts/deploy.sh` with `sudo` so the snapshot can read the container-owned `data/` — the SSH user
-must have passwordless sudo.
+```bash
+# as root: hourly check for a new image, snapshot + restart only on change
+crontab -e
+# add:
+0 * * * * /opt/otc-oidc/scripts/deploy.sh
+```
+
+`scripts/deploy.sh` pulls the app image and restarts the stack only when the image digest changed,
+so unchanged polls are no-ops. Before restarting it snapshots `data/` + `clients.json` into
+`./backups` (last 15 kept). No GitHub secrets are needed.
+
+To roll back after a bad upgrade, restore the matching snapshot from `./backups` and point compose
+at the previous image: `IMAGE_TAG=<previous-sha> docker compose up -d`.
 
 ### 5. Backups
 
