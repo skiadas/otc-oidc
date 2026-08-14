@@ -9,6 +9,12 @@ TAG="${1:-latest}"
 DIR="${DIR:-/opt/otc-oidc}"
 cd "$DIR"
 
+# compose.yml resolves GHCR_OWNER from .env; mirror that here so the digest
+# check inspects the same image the stack actually runs.
+if [ -z "${GHCR_OWNER:-}" ] && [ -f .env ]; then
+  GHCR_OWNER="$(sed -n 's/^GHCR_OWNER=//p' .env | head -1)"
+fi
+
 IMAGE="ghcr.io/${GHCR_OWNER:-your-org}/otc-oidc"
 
 docker compose pull app
