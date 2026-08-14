@@ -156,18 +156,25 @@ provisions Let's Encrypt certificates automatically; set `DOMAIN` in your `.env`
 
 ### 4. Deploy
 
+No git clone needed — the image and the compose files come straight from the public GitHub repo.
+Fetch the two infra files (or `curl` them by hand), write your `.env` + `clients.json`, and start:
+
 ```bash
 # on the server
-git clone <your-repo> /opt/otc-oidc
-cd /opt/otc-oidc
-cp .env.example .env        # fill in real values
-cp clients.example.json clients.json
+mkdir -p /opt/otc-oidc && cd /opt/otc-oidc
+curl -fsSLo compose.yml https://raw.githubusercontent.com/<you>/otc-oidc/main/compose.yml
+curl -fsSLo Caddyfile  https://raw.githubusercontent.com/<you>/otc-oidc/main/Caddyfile
+curl -fsSLo clients.example.json https://raw.githubusercontent.com/<you>/otc-oidc/main/clients.example.json
+cp clients.example.json clients.json   # then edit in real client secrets
+curl -fsSLo .env.example https://raw.githubusercontent.com/<you>/otc-oidc/main/.env.example
+cp .env.example .env                   # then fill in real values (see Configuration above)
 docker compose up -d
 ```
 
 `DOMAIN` and `GHCR_OWNER` are read by `compose.yml` (not the app): `DOMAIN` is the hostname Caddy
-serves, `GHCR_OWNER` is the GitHub owner of the image you pull from. Runtime data (`jwks.json`,
-audit logs) lives in a Docker named volume; `clients.json` stays a bind-mounted host file.
+serves, `GHCR_OWNER` is the GitHub owner of the image you pull from (your GitHub username). Runtime
+data (`jwks.json`, audit logs) lives in a Docker named volume; `clients.json` stays a
+bind-mounted host file.
 
 **Caddy is a Compose profile.** With the default `COMPOSE_PROFILES=proxy` in `.env`, `docker
 compose up -d` starts Caddy in front of the app and provisions Let's Encrypt certificates for
@@ -181,13 +188,16 @@ typecheck/lint/tests, then builds and publishes `ghcr.io/<you>/otc-oidc:<sha>` +
 
 ```bash
 # as root: hourly check for a new image, restart only on change
+curl -fsSLo /opt/otc-oidc/deploy.sh https://raw.githubusercontent.com/<you>/otc-oidc/main/scripts/deploy.sh
+chmod +x /opt/otc-oidc/deploy.sh
 crontab -e
 # add:
-0 * * * * /opt/otc-oidc/scripts/deploy.sh
+0 * * * * /opt/otc-oidc/deploy.sh
 ```
 
-`scripts/deploy.sh` pulls the app image and restarts the stack only when the image digest changed,
-so unchanged polls are no-ops. No GitHub secrets are needed.
+`deploy.sh` refreshes `compose.yml` + `Caddyfile` from the repo, pulls the app image, and restarts
+the stack only when the image digest changed, so unchanged polls are no-ops. It reads `GHCR_OWNER`
+from `.env`. No GitHub secrets are needed.
 
 To roll back after a bad upgrade, point compose at the previous image:
 `IMAGE_TAG=<previous-sha> docker compose up -d`. A restart logs everyone out (in-memory sessions),
