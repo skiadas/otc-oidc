@@ -206,6 +206,11 @@ function buildProviderConfig(
       email: ['email', 'email_verified'],
       profile: ['name', 'preferred_username'],
     },
+    // Default true collapses the ID token's scope to just `openid` whenever
+    // the userinfo endpoint is enabled and the access token has no audience —
+    // which is our code flow. We want granted claims (email, etc.) in the
+    // ID token itself, so disable that compatibility behavior.
+    conformIdTokenClaims: false,
     cookies: {
       keys: [cookieSecret],
     },

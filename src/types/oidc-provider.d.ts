@@ -87,6 +87,7 @@ declare module 'oidc-provider' {
     claims?: Record<string, unknown>;
     cookies?: { keys?: string[] };
     pkce?: { required?: () => boolean };
+    conformIdTokenClaims?: boolean;
     features?: {
       devInteractions?: { enabled?: boolean };
     };
