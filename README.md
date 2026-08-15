@@ -134,6 +134,10 @@ Socialite, Spring Security, etc.). The tool:
 4. Uses the `email` claim from the ID token / userinfo as the canonical user identity (JIT-provision if needed).
 5. Optionally wires logout through `<issuer>/session/end`.
 
+For the full walkthrough — registration details, identity model, and the gotchas (PKCE must be
+enabled explicitly, `client_secret_post`, the authlib error type) — see
+[docs/client-integration.md](docs/client-integration.md).
+
 See `scripts/dev-client.mjs` for a minimal, dependency-free example of the whole dance.
 
 ## Self-hosting
