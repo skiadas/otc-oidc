@@ -155,7 +155,11 @@ function request(
   base: string,
   path: string,
   opts: { method?: string; form?: Record<string, string>; cookie?: string } = {},
-): Promise<{ status: number; headers: Record<string, string | string[] | undefined>; body: string }> {
+): Promise<{
+  status: number;
+  headers: Record<string, string | string[] | undefined>;
+  body: string;
+}> {
   const { method = 'GET', form, cookie } = opts;
   const headers: Record<string, string> = {};
   if (cookie) headers['cookie'] = cookie;
@@ -199,7 +203,12 @@ async function startLogin(base: string, cookie: string) {
     code_challenge_method: 'S256',
   });
   const res = await request(base, `/auth?${params}`, { cookie });
-  return { status: res.status, location: res.headers.location as string, verifier, cookie: cookieJar(res.headers) };
+  return {
+    status: res.status,
+    location: res.headers.location as string,
+    verifier,
+    cookie: cookieJar(res.headers),
+  };
 }
 
 async function exchangeCode(base: string, code: string, verifier: string) {
@@ -257,7 +266,10 @@ describe('OIDC flow', () => {
     try {
       const login = await startLogin(base, '');
       assert.equal(login.status, 303);
-      assert.ok(login.location.includes('/interaction/'), `expected interaction redirect, got ${login.location}`);
+      assert.ok(
+        login.location.includes('/interaction/'),
+        `expected interaction redirect, got ${login.location}`,
+      );
       const uid = login.location.split('/').pop() ?? '';
       const cookie = login.cookie;
 
@@ -286,7 +298,10 @@ describe('OIDC flow', () => {
       // Follow the resume redirect chain to the client callback; the final
       // location carries the authorization code.
       const done = await follow(base, res.headers.location as string, verifyCookie);
-      assert.ok(done.finalLocation?.startsWith(REDIRECT_URI), `expected client callback, got ${done.finalLocation}`);
+      assert.ok(
+        done.finalLocation?.startsWith(REDIRECT_URI),
+        `expected client callback, got ${done.finalLocation}`,
+      );
       const authCode = new URL(done.finalLocation!).searchParams.get('code');
       assert.ok(authCode, 'authorization code should be present in the final redirect');
 
@@ -324,7 +339,11 @@ describe('OIDC flow', () => {
         cookie,
       });
       assert.equal(verifyRes.status, 303);
-      const first = await follow(base, verifyRes.headers.location as string, cookieJar(verifyRes.headers) || cookie);
+      const first = await follow(
+        base,
+        verifyRes.headers.location as string,
+        cookieJar(verifyRes.headers) || cookie,
+      );
       assert.ok(
         new URL(first.finalLocation!).searchParams.get('code'),
         `first login should yield an auth code, got ${first.finalLocation}`,
@@ -337,7 +356,10 @@ describe('OIDC flow', () => {
       const second = await startLogin(base, cookie);
       assert.equal(second.status, 303);
       const secondDone = await follow(base, second.location, second.cookie);
-      assert.ok(secondDone.finalLocation?.startsWith(REDIRECT_URI), `expected silent SSO to reach the client, got ${secondDone.finalLocation}`);
+      assert.ok(
+        secondDone.finalLocation?.startsWith(REDIRECT_URI),
+        `expected silent SSO to reach the client, got ${secondDone.finalLocation}`,
+      );
       const code = new URL(secondDone.finalLocation!).searchParams.get('code');
       assert.ok(code, 'silent SSO should still yield an authorization code');
 

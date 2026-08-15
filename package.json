@@ -16,8 +16,8 @@
     "test": "node --import tsx --test test/**/*.test.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write \"**/*.{ts,js,mjs,cjs,json,html,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,mjs,cjs,json,html,css}\"",
     "gen:secrets": "tsx scripts/gen-secrets.ts"
   },
   "dependencies": {

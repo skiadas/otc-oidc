@@ -259,8 +259,8 @@ export function renderInfoPage(config: Config): string {
   const body = html`
     <h1>${config.serviceName}</h1>
     <p>
-      This is the sign-in provider for ${config.serviceName}. Tools redirect
-      here to log you in; there is nothing to browse at this address.
+      This is the sign-in provider for ${config.serviceName}. Tools redirect here to log you in;
+      there is nothing to browse at this address.
     </p>
     <p>
       <a href="${discovery}">OpenID Connect discovery document</a>
