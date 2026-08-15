@@ -55,6 +55,17 @@ One Node/TypeScript process. In-memory storage. JSONL audit logs. OIDC protocol 
 - **Prefer establishing written tests over running ad-hoc scripts.** When investigating oidc-provider behavior, write the reproduction as a real test in `test/` (boot the app on an ephemeral port exactly as `oidcFlow.test.ts` does) rather than throwaway `.mjs`/inline scripts. Standalone scripts can't resolve `oidc-provider`/`dist` the same way, get discarded, and leave no regression coverage. If you're about to write a *second* ad-hoc script, stop and convert it to a test.
 - The installed `oidc-provider` is partly minified, so reading its source is unreliable. Diagnose via runtime state (adapter rows, actual HTTP responses) and real tests instead.
 
+## Working agreements
+
+These apply to every change in this repo:
+
+- **Definition of done includes CI health.** A change isn't done when checks pass — it's done when every CI annotation is resolved *or* explicitly reported with a path forward. A "green" workflow that still carries warnings does not count as green.
+- **Never present a warning as clean.** Surface every `!` annotation in workflow output by name, every time.
+- **Deferred items go somewhere visible.** Anything deferred (a deprecation, a gap, a follow-up) goes into `docs/KNOWN-ISSUES.md`, not into memory or commit messages. Revisit it when relevant.
+- **Capture non-obvious learnings in the same change.** When a behavior is discovered the hard way (`conformIdTokenClaims`, the `clients.json` restart footgun, PKCE not being explicit), document it in this file or `docs/` alongside the fix — not as an afterthought.
+- **Verify the actual artifact.** Before declaring a deployment done, confirm what the server is actually running matches what was pushed (image digest, container state), not just that the pipeline reported success.
+- **Raise assumptions instead of carrying them.** When something seems off or uncertain, surface it rather than deciding silently.
+
 ## oidc-provider v9 specifics (verified against installed version)
 
 - `Provider` extends Koa; mount with `app.use(provider.callback())` LAST (it 404s unmatched paths).

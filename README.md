@@ -41,6 +41,7 @@ The next tool you open skips the email/code entirely (silent SSO) until your ses
 
 For a deeper look at how the pieces fit together — the interaction protocol, storage and
 security models, and deployment topology — see [docs/architecture.md](docs/architecture.md).
+Known gaps and deferred items are tracked in [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
 
 ## Requirements
 
